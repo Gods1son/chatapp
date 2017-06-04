@@ -1,79 +1,81 @@
-
 var socket = io();
-var roomName;  
- // on connection to server, ask for user's name with an anonymous callback
-  socket.on('connect', function(){
-		// call the server-side function 'adduser' and send one parameter (value of prompt)
-		socket.emit("pickUsername",prompt("Pick a username"));
-	});
-socket.on('disconnectedUser', function(info){
+var roomName;
+// on connection to server, ask for user's name with an anonymous callback
+socket.on('connect', function () {
+	// call the server-side function 'adduser' and send one parameter (value of prompt)
+	socket.emit("pickUsername", prompt("Pick a username"));
+});
+socket.on('disconnectedUser', function (info) {
 	alert(info);
 })
 
-socket.on('roomCreated', function(room){
+socket.on('roomCreated', function (room) {
 	alert(room);
 })
 
-socket.on('startScores', function(username){
-	document.getElementById("scores").innerHTML = username;
-	//$('#scores').append('<div>' + correct + '</div>' + '<hr>');
-	//$('#scores').append('<div>' + incorrect + '</div>' + '<hr>');
-	var elem2 = document.getElementById('scoreContainer');
-  	elem2.scrollTop = elem2.scrollHeight;
+socket.on('startScores', function (roomMap) {
+
+	for (var [username, score] of roomMap.entries()) {
+		document.getElementById("scores").innerHTML += "<span id ='" + username + "'>" + score + "</span>" + "<hr>";
+	}
+
+	var scoreContain = document.getElementById('scoreContainer');
+	scoreContain.scrollTop = scoreContain.scrollHeight;
 })
 
-socket.on('updateScores', function(username, score){
+socket.on('updateScores', function (username, score) {
 	document.getElementById(username).innerHTML = score;
 	//$('#scores').append('<div>' + correct + '</div>' + '<hr>');
 	//$('#scores').append('<div>' + incorrect + '</div>' + '<hr>');
 	var elem2 = document.getElementById('scoreContainer');
-  	elem2.scrollTop = elem2.scrollHeight;
+	elem2.scrollTop = elem2.scrollHeight;
 })
 
-socket.on('roomCreatedError', function(notice){
+socket.on('roomCreatedError', function (notice) {
 	alert(notice);
 })
 
-socket.on('allUsers', function(data){
+socket.on('allUsers', function (roomMap) {
 	$('#users').empty();
-		/*$.each(data, function(key, value) {
-			$('#users').append('<div>' + value + '</div>');
-		});*/
-	
-		$('#users').append('<div>' + data + '</div>');
-	
+
+	$('#users').append('<div> ')
+	for (var username of roomMap.keys()) {
+		$('#users').append(username + '<br/>');
+	}
+
+	$('#users').append('</div>');
 })
 
-socket.on('roomJoined', function(room){
+socket.on('roomJoined', function (room) {
 	alert(room);
 })
 
-socket.on('newWord', function(word, room, originalWord){
+socket.on('newWord', function (word, room, originalWord) {
 	$('#wordsNew').append('<li>' + word + '</li>');
 	//document.getElementById("wordsNew").innerHTML += "<br>" + word;
-	 var elem = document.getElementById('allWords');
-  	 elem.scrollTop = elem.scrollHeight;
+	var elem = document.getElementById('allWords');
+	elem.scrollTop = elem.scrollHeight;
 	roomName = room;
 	if (localStorage.getItem(room) == undefined) {
-    	localStorage.setItem(room, originalWord);
-    } else {
-    	localStorage.removeItem(room);
-    	localStorage.setItem(room, originalWord);
+		localStorage.setItem(room, originalWord);
+	} else {
+		localStorage.removeItem(room);
+		localStorage.setItem(room, originalWord);
 	}
 })
 
-socket.on('newWord2', function(word){
+socket.on('newWord2', function (word) {
 	$('#wordsNew').append('<li>' + word + '</li>');
 	//document.getElementById("wordsNew").innerHTML += "<br>" + word;
 	var elem = document.getElementById('allWords');
-  	elem.scrollTop = elem.scrollHeight;
+	elem.scrollTop = elem.scrollHeight;
 })
 
-socket.on('sharedHint', function(hint){
+socket.on('sharedHint', function (hint) {
 	$('#wordsNew').append('<li>' + hint + '</li>');
 	//document.getElementById("wordsNew").innerHTML += "<br>" + hint;
 	var elem = document.getElementById('allWords');
-  	elem.scrollTop = elem.scrollHeight;
+	elem.scrollTop = elem.scrollHeight;
 })
 
 function showCreateRoom() {
@@ -94,13 +96,13 @@ function joinRoom() {
 	socket.emit("joinRoom", roomName);
 }
 
-function giveHint(){
+function giveHint() {
 	var hint = $("#myHint").val();
 	document.getElementById("myHint").value = "";
 	socket.emit("giveHint", hint);
 }
 
-function sendWord(){
+function sendWord() {
 	var word = $("#wordToShuffle").val();
 	word = word.toLowerCase();
 	document.getElementById("wordToShuffle").value = "";
@@ -108,23 +110,23 @@ function sendWord(){
 	socket.emit("sendShuffledWord", shuffledWord, word);
 }
 
-function sendGuess(){
+function sendGuess() {
 	var result;
 	var word = $("#myGuess").val();
 	word = word.toLowerCase();
 	document.getElementById("myGuess").value = "";
 	if (localStorage.getItem(roomName) == undefined) {
-   		alert("no word to guess");
-	}else{
-	var word2guess = localStorage.getItem(roomName);
-   		if (word == word2guess) {
-   			word = word + " " + "<img src='checkmark-png-22.png' height='30' width='30'>";
-   			localStorage.removeItem(roomName);
+		alert("no word to guess");
+	} else {
+		var word2guess = localStorage.getItem(roomName);
+		if (word == word2guess) {
+			word = word + " " + "<img src='checkmark-png-22.png' height='30' width='30'>";
+			localStorage.removeItem(roomName);
 			result = "pass";
-   		} else {
-   			word = word + " " + "<img src='cross.png' height='30' width='30'>";
+		} else {
+			word = word + " " + "<img src='cross.png' height='30' width='30'>";
 			result = "fail";
-   		}
+		}
 	}
 	//var shuffledWord = shuffleman(word);	
 	socket.emit("sendMyGuess", word, result);
@@ -137,33 +139,33 @@ function shuffleman(word) {
 	var allnumbers = [];
 	var wordsplit = shuffleword.split("");
 
-    do{
-        
-      //  var shufflenumber = document.getElementById("shufflenumber");
-               
-        var randomnumber = Math.floor(Math.random() * shuffleword.length);
-            
-        if(allnumbers.indexOf(randomnumber) != -1){
-        	var randomnumber = Math.floor(Math.random() * shuffleword.length);
-        }else{
-        	allnumbers.push(randomnumber);
-        }
-               
-    }while(allnumbers.length != shuffleword.length);
-       for (var x = 0; x < allnumbers.length; x++) {
-       	var position = allnumbers[x];
-    	 newword = wordsplit[position];
-    	newwordform += newword;
-	    
-    }
-    //set the real word empty
-   // document.getElementById("shuffleword").value = "";
+	do {
 
-    //save word to localstorage
-	  return newwordform;
-   }
+		//  var shufflenumber = document.getElementById("shufflenumber");
 
-  /*  // on connection to server, ask for user's name with an anonymous callback
+		var randomnumber = Math.floor(Math.random() * shuffleword.length);
+
+		if (allnumbers.indexOf(randomnumber) != -1) {
+			var randomnumber = Math.floor(Math.random() * shuffleword.length);
+		} else {
+			allnumbers.push(randomnumber);
+		}
+
+	} while (allnumbers.length != shuffleword.length);
+	for (var x = 0; x < allnumbers.length; x++) {
+		var position = allnumbers[x];
+		newword = wordsplit[position];
+		newwordform += newword;
+
+	}
+	//set the real word empty
+	// document.getElementById("shuffleword").value = "";
+
+	//save word to localstorage
+	return newwordform;
+}
+
+/*  // on connection to server, ask for user's name with an anonymous callback
    socket.on('connect', function(){
 		// call the server-side function 'adduser' and send one parameter (value of prompt)
 		socket.emit('adduser', prompt("What's your name?"));
