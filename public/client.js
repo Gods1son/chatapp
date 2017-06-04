@@ -35,12 +35,12 @@ socket.on('roomCreatedError', function (notice) {
 	alert(notice);
 })
 
-socket.on('allUsers', function (room) {
+socket.on('allUsers', function (roomMap) {
 	$('#users').empty();
 
 	$('#users').append('<div> ')
-	for (var key of room.keys()) {
-		$('#users').append(key + '<br/>');
+	for (var username of roomMap.keys()) {
+		$('#users').append(username + '<br/>');
 	}
 
 	$('#users').append('</div>');
